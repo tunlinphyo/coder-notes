@@ -1,29 +1,40 @@
-# Test
+# Permanent Link to Code Snippet Demo
 
-This is test note.
+This note mocks the GitHub UI for a permanent link to a code snippet.
 
-<div style="max-width: 720px; margin-top: 16px; border: 1px solid #d0d7de; border-radius: 12px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #ffffff; box-shadow: 0 1px 3px rgba(27, 31, 36, 0.08);">
-  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #f6f8fa; border-bottom: 1px solid #d8dee4;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <img src="https://github.githubassets.com/favicons/favicon.svg" alt="GitHub" width="20" height="20" />
-      <strong style="font-size: 14px; color: #24292f;">octocat / demo-ui</strong>
-      <span style="padding: 2px 8px; border: 1px solid #d0d7de; border-radius: 999px; font-size: 12px; color: #57606a;">Public</span>
+> Based on the GitHub Docs, the real snippet card renders in GitHub comments in the same repository. In Markdown files like this one, GitHub treats the permalink as a normal URL instead of a rich code snippet.
+
+<div style="max-width: 860px; margin-top: 16px; border: 1px solid #d0d7de; border-radius: 12px; overflow: hidden; background: #ffffff; box-shadow: 0 1px 3px rgba(27, 31, 36, 0.08); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: #f6f8fa; border-bottom: 1px solid #d8dee4;">
+    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+      <img src="https://github.githubassets.com/favicons/favicon.svg" alt="GitHub" width="18" height="18" />
+      <strong style="font-size: 14px; color: #24292f;">src/utils/permalink.ts</strong>
+      <span style="padding: 2px 8px; border: 1px solid #d0d7de; border-radius: 999px; font-size: 12px; color: #57606a;">L12-L19</span>
     </div>
-    <a href="https://github.com" style="font-size: 13px; color: #0969da; text-decoration: none;">Open on GitHub</a>
+    <span style="padding: 2px 8px; background: #ddf4ff; color: #0969da; border-radius: 999px; font-size: 12px; white-space: nowrap;">commit 8f3c2ab</span>
   </div>
-  <div style="padding: 16px;">
-    <h3 style="margin: 0 0 8px; font-size: 18px; color: #24292f;">Custom HTML UI demo</h3>
-    <p style="margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: #57606a;">
-      You can embed raw HTML in Markdown to present a GitHub-style card, buttons, badges, and layout blocks.
-    </p>
-    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
-      <span style="padding: 4px 10px; background: #ddf4ff; color: #0969da; border-radius: 999px; font-size: 12px;">html</span>
-      <span style="padding: 4px 10px; background: #dafbe1; color: #1a7f37; border-radius: 999px; font-size: 12px;">github ui</span>
-      <span style="padding: 4px 10px; background: #fff8c5; color: #9a6700; border-radius: 999px; font-size: 12px;">demo</span>
-    </div>
-    <div style="display: flex; gap: 10px;">
-      <a href="https://github.com" style="display: inline-block; padding: 8px 12px; background: #1f883d; color: #ffffff; border-radius: 6px; font-size: 13px; text-decoration: none;">View repo</a>
-      <a href="https://docs.github.com" style="display: inline-block; padding: 8px 12px; background: #f6f8fa; color: #24292f; border: 1px solid #d0d7de; border-radius: 6px; font-size: 13px; text-decoration: none;">Docs</a>
-    </div>
+  <div style="padding: 0; background: #f6f8fa;">
+    <pre style="margin: 0; padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.6; color: #24292f; background: #f6f8fa;"><code><span style="display: block;"><span style="display: inline-block; width: 32px; color: #8c959f; user-select: none;">12</span><span style="background: #fff8c5;">export function copyPermalink(path: string, start: number, end?: number) {</span></span><span style="display: block;"><span style="display: inline-block; width: 32px; color: #8c959f; user-select: none;">13</span><span style="background: #fff8c5;">  const range = end ? `#L${start}-L${end}` : `#L${start}`;</span></span><span style="display: block;"><span style="display: inline-block; width: 32px; color: #8c959f; user-select: none;">14</span><span style="background: #fff8c5;">  return [</span></span><span style="display: block;"><span style="display: inline-block; width: 32px; color: #8c959f; user-select: none;">15</span><span style="background: #fff8c5;">    "https://github.com/acme/demo/blob/8f3c2ab",</span></span><span style="display: block;"><span style="display: inline-block; width: 32px; color: #8c959f; user-select: none;">16</span><span style="background: #fff8c5;">    path + range,</span></span><span style="display: block;"><span style="display: inline-block; width: 32px; color: #8c959f; user-select: none;">17</span><span style="background: #fff8c5;">  ].join("/");</span></span><span style="display: block;"><span style="display: inline-block; width: 32px; color: #8c959f; user-select: none;">18</span><span style="background: #fff8c5;">}</span></span><span style="display: block;"><span style="display: inline-block; width: 32px; color: #8c959f; user-select: none;">19</span></span></code></pre>
+  </div>
+  <div style="padding: 12px 16px; border-top: 1px solid #d8dee4; background: #ffffff;">
+    <div style="margin-bottom: 8px; font-size: 12px; color: #57606a; text-transform: uppercase; letter-spacing: 0.04em;">Permalink</div>
+    <code style="display: block; padding: 10px 12px; border-radius: 8px; background: #f6f8fa; border: 1px solid #d8dee4; font-size: 12px; color: #0969da; overflow-x: auto;">https://github.com/acme/demo/blob/8f3c2ab/src/utils/permalink.ts#L12-L18</code>
   </div>
 </div>
+
+## How it works on GitHub
+
+1. Open a file or pull request diff.
+2. Select one line or a line range.
+3. Use the line menu and choose `Copy permalink`.
+4. Paste that link into a comment to get the rich snippet UI.
+
+## Markdown File Note
+
+If you want to link to lines in a Markdown file on GitHub, use the file URL with `?plain=1`, then append `#L...`.
+
+Example:
+
+```text
+https://github.com/<org>/<repo>/blob/<commit_SHA>/README.md?plain=1#L14
+```
