@@ -1,0 +1,282 @@
+# ModalDialog
+
+The ModalDialog custom element extends the [MiniEl](/html/miniel) class and creates a dialog element with a swipe-to-close function for mobile web apps.
+
+## Contents
+
+- [Example HTML](#example-html)
+- [Example TypeScript](#example-typescript)
+- [PageDialog](#pagedialog)
+- [Styles](#styles)
+
+## Example HTML
+
+```html
+<modal-dialog id="categoryModal">
+    <header slot="header">
+        <button class="button-close" data-button="close">
+            <svg-icon name="close" size="16"></svg-icon>
+        </button>
+        <h2>Category</h2>
+        <button class="button-action" data-button="action">
+            <svg-icon name="done" size="16"></svg-icon>
+        </button>
+    </header>
+    <reactive-form id="caegoryForm">
+        <input type="hidden" name="id" value="" />
+
+        <div class="card">
+            <category-data scoped>
+                <div class="icon" data-bind-attr="data-bg-color:color" data-bg-color="gray">
+                    <category-icon data-bind-attr="name:icon" name="clothe-hanger" size="48"></category-icon>
+                </div>
+                <input autofocus data-bind-attr="data-color:color" data-form-input type="text" name="name" placeholder="Category Name" />
+            </category-data>
+        </div>
+        <div class="card">
+            <dynamic-list data-input="colors" id="colorInputs">
+                <template>
+                    <dynamic-item>
+                        <label data-color data-bind-attr="data-bg-color:id">
+                            <input data-aria-only type="radio" name="color" data-bind="id">
+                        </label>
+                    </dynamic-item>
+                </template>
+            </dynamic-list>
+        </div>
+        <div class="card m-0">
+            <dynamic-list data-input="icons" id="iconsInputs">
+                <template>
+                    <dynamic-item>
+                        <label data-icon>
+                            <category-icon data-bind-attr="name:id" size="20"></category-icon>
+                            <input data-aria-only type="radio" name="icon" data-bind="id">
+                        </label>
+                    </dynamic-item>
+                </template>
+            </dynamic-list>
+        </div>
+    </reactive-form>
+</modal-dialog>
+```
+
+## Example TypeScript
+
+```ts
+const categoryModal = document.querySelector<ModalDialog>('#categoryModal')
+
+categoryModal.openModal()
+categoryModal.closeModal()
+
+categoryModal.addEventListener('button-click', (e: Event) => {
+    const customEvent = e as CustomEvent
+    console.log(customEvent.detail)
+})
+categoryModal.addEventListener('opened', () => {
+    console.log("opened")
+})
+categoryModal.addEventListener('closed', () => {
+    console.log("closed")
+})
+```
+
+## PageDialog
+
+File: `modal-dialog.ts`
+
+```ts
+export class ModalDialog extends MiniEl {
+    private dialog!: HTMLDialogElement
+    private startY: number = 0
+    private currentY: number = 0
+    private isDragging: boolean = false
+
+    static styles = [ hostStyles ]
+
+    constructor() {
+        super()
+
+        this.onTouchStart = this.onTouchStart.bind(this)
+        this.onTouchMove = this.onTouchMove.bind(this)
+        this.onTouchEnd = this.onTouchEnd.bind(this)
+        this.onClick = this.onClick.bind(this)
+    }
+
+    protected onConnect() {
+        this.dialog = this.renderRoot.querySelector('dialog') as HTMLDialogElement
+
+        this.dialog.addEventListener('touchstart', this.onTouchStart, true)
+        this.dialog.addEventListener('touchmove', this.onTouchMove, true)
+        this.dialog.addEventListener('touchend', this.onTouchEnd)
+        this.dialog.addEventListener('click', this.onClick)
+    }
+
+    protected onDisconnect() {
+        this.dialog.removeEventListener('touchstart', this.onTouchStart, true)
+        this.dialog.removeEventListener('touchmove', this.onTouchMove, true)
+        this.dialog.removeEventListener('touchend', this.onTouchEnd)
+        this.dialog.removeEventListener('click', this.onClick)
+    }
+
+    openModal() {
+        this.dialog.showModal()
+        // if (scrollReset) this.scrollY = 0
+        // const scrollView = this.shadowRoot?.querySelector('scroll-view') as ScrollView
+        // scrollView?.scrollTo(0, this.scrollY)
+
+        this.openAnimation()
+    }
+
+    closeModal(currentX: number = 0) {
+        const animation = this.closeAnimation(currentX)
+
+        animation.finished.then(() => {
+            this.dialog.classList.remove("closing")
+            this.dialog.close()
+        })
+    }
+
+    protected render() {
+        return html`
+            <dialog>
+                <slot name="header"></slot>
+                <section>
+                    <slot></slot>
+                </section>
+            </dialog>
+        `
+    }
+
+    private onClick(event: Event) {
+        const target = event.target as HTMLElement
+        if (target && target.dataset.button) {
+            if (target.dataset.button === 'close') {
+                this.closeModal()
+            } else {
+                this.dispatchEvent(new CustomEvent('button-click', { detail: target.dataset }))
+            }
+        }
+    }
+
+    private onTouchStart(event: TouchEvent): void {
+        if (event.touches.length !== 1) return
+        this.startY = event.touches[0].clientY
+        this.currentY = this.startY
+        if ((this.dialog.scrollTop || 0) > 0 && this.startY > 80) return
+
+        this.isDragging = true
+    }
+
+    private onTouchMove(event: TouchEvent): void {
+        if (!this.isDragging) return
+
+        this.currentY = event.touches[0].clientY
+        const deltaY = this.currentY - this.startY
+        if (deltaY > 0) {
+            event.preventDefault()
+            this.dialog.style.transform = `translateY(${deltaY}px)`
+        }
+    }
+
+    private onTouchEnd(): void {
+        this.dialog.removeAttribute('style')
+        if (!this.isDragging) return
+
+        const deltaY = this.currentY - this.startY
+        this.isDragging = false
+
+        if (deltaY > this.dialog.clientHeight * 0.4) {
+            this.closeModal(deltaY)
+        } else if (deltaY > 1) {
+            this.openAnimation(deltaY)
+        }
+    }
+
+    private openAnimation(deltaY: number = 0) {
+        return this.dialog.animate([
+            { translate: `0 ${deltaY || window.innerHeight }px` },
+            { translate: '0 0' },
+        ], {
+            duration: 600,
+            easing: 'cubic-bezier(0.34, 1.2, 0.64, 1)',
+        })
+    }
+
+    private closeAnimation(deltaY: number = 0) {
+        this.dialog.classList.add('closing')
+
+        return this.dialog.animate([
+            { translate: `0 ${deltaY}px` },
+            { translate: '0 110%' },
+        ], {
+            duration: 600,
+            easing: 'cubic-bezier(0.34, 1.2, 0.64, 1)'
+        })
+    }
+}
+
+customElements.define('modal-dialog', ModalDialog)
+```
+
+## Styles
+
+File: `styles.ts`
+
+```ts
+const hostStyles = css`
+    * {
+        box-sizing: border-box;
+    }
+    dialog {
+        width: 100%;
+        max-width: 100%;
+        height: calc(100% - 20px);
+        max-height: 100%;
+        position: fixed;
+        inset: 20px 0 0;
+        padding: 0;
+        border-radius: var(--radius-3) var(--radius-3) 0 0;
+
+        border: none;
+        outline: none;
+        background-color: var(--bg-color);
+
+        &::backdrop {
+            background-color: #3339;
+            opacity: 0;
+            transition: opacity .6s linear;
+        }
+        &[open] {
+            &::backdrop {
+                opacity: 1;
+            }
+        }
+        @starting-style {
+            &[open]::backdrop {
+                opacity: 0;
+            }
+        }
+        &.closing {
+            &::backdrop {
+                opacity: 0;
+            }
+        }
+    }
+    ::slotted(header) {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        width: 100%;
+        height: 60px;
+        transform: translateZ(0);
+    }
+    section {
+        padding: 20px;
+    }
+    @media (display-mode: fullscreen), (display-mode: standalone) {
+        section {
+            padding-block-end: 40px;
+        }
+    }
+`
+```

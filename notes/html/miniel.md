@@ -1,0 +1,199 @@
+# MiniEl
+
+The MiniEl class is an abstract base class designed for building lightweight, reactive Web Components using native browser APIs. It extends HTMLElement and provides a structured way to manage component lifecycle, rendering, and style encapsulation, all without relying on external frameworks.
+
+At its core, MiniEl automatically attaches a shadow DOM to each component instance, providing style and markup encapsulation. Developers can define static styles using the styles static property, which are injected into the shadow root via the adoptedStyleSheets API, a modern, fast way to apply scoped CSS.
+
+## Contents
+
+- [Example](#example)
+- [MiniEl Class](#miniel-class)
+- [PropertyGuard](#propertyguard)
+- [html](#html)
+- [css](#css)
+
+## Example
+
+```ts
+const hostStyle = css`
+    :host {
+        display: block;
+    }
+    ::slotted(.flex) {
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+    }
+`
+export class MiniTest extends MiniEl {
+    static styles = [ hostStyle ]
+
+    constructor() {
+        super()
+    }
+
+    protected render() {
+        return html`
+            <slot></slot>
+        `
+    }
+}
+
+customElements.define('mini-test', MiniTest)
+```
+
+## MiniEl Class
+
+```ts
+export abstract class MiniEl extends HTMLElement {
+    protected renderRoot: ShadowRoot
+    static styles?: CSSStyleSheet[]
+    static properties?: PropertyDefinition
+
+    static get observedAttributes(): string[] {
+        return Object.keys(this.properties || {})
+    }
+
+    constructor() {
+        super()
+        this.renderRoot = this.attachShadow({ mode: 'open' })
+
+        const ctor = this.constructor as typeof MiniEl
+        if (ctor.styles?.length) {
+            this.renderRoot.adoptedStyleSheets = ctor.styles
+        }
+        if (ctor.properties) {
+            for (const [key, value] of Object.entries(ctor.properties)) {
+                const data = this.getAttribute(key) || '';
+                (this as any)[key] = value.converter(data)
+            }
+        }
+    }
+
+    connectedCallback(): void {
+        this.initialRender()
+        this.onConnect?.()
+    }
+
+    disconnectedCallback(): void {
+        this.onDisconnect?.()
+    }
+
+    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+        const properties = (this.constructor as typeof MiniEl).properties
+        if (
+            properties && properties[name]
+            && oldValue !== newValue
+            && this.onPropertyChange
+        ) {
+            const guard = properties[name]
+            this.onPropertyChange({
+                name,
+                oldValue: guard.converter(oldValue ?? ''),
+                newValue: guard.converter(newValue ?? '')
+            })
+        }
+    }
+
+    private initialRender() {
+        this.onBeforeRender?.()
+        this.renderHTML()
+        this.onAfterRender?.()
+    }
+
+    protected update(): void {
+        this.beforeUpdate?.()
+        this.renderHTML()
+        this.afterUpdate?.()
+    }
+
+    protected abstract render(): Node | Node[]
+
+    protected onPropertyChange?(property: PropertyChange<PropertyDefinition>): void
+    protected beforeUpdate?(): void
+    protected afterUpdate?(): void
+    protected onConnect?(): void
+    protected onDisconnect?(): void
+    protected onBeforeRender?(): void
+    protected onAfterRender?(): void
+
+    private renderHTML() {
+        this.renderRoot.innerHTML = ''
+        const node = this.render()
+        if (Array.isArray(node)) {
+            for (const n of node) {
+                this.renderRoot.appendChild(n)
+            }
+        } else {
+            this.renderRoot.appendChild(node)
+        }
+    }
+}
+```
+
+## PropertyGuard
+
+```ts
+export type PropertyGuard = {
+    converter: (value: string) => any // used for runtime conversion
+}
+
+export type PropertyDefinition = Record<string, PropertyGuard>
+
+export type PropertyChange<T extends PropertyDefinition> = {
+    name: keyof T
+    oldValue: ReturnType<T[keyof T]['converter']>
+    newValue: ReturnType<T[keyof T]['converter']>
+}
+```
+
+## html
+
+```ts
+export class RawHTML {
+    constructor(public readonly value: string) {}
+}
+
+export function raw(value: string): RawHTML {
+    return new RawHTML(value)
+}
+
+export function html(strings: TemplateStringsArray, ...values: any[]): Node {
+    const template = document.createElement('template')
+    const htmlString = strings.reduce((acc, str, i) => {
+        const val = values[i];
+        if (val instanceof RawHTML) {
+            return acc + str + val.value;
+        } else {
+            return acc + str + serialize(val);
+        }
+    }, '')
+
+    template.innerHTML = htmlString
+    return template.content.cloneNode(true)
+}
+```
+
+## css
+
+```ts
+export function css(strings: TemplateStringsArray, ...values: any[]): CSSStyleSheet {
+    const cssString = strings.reduce((acc, str, i) => {
+        const val = values[i];
+        return acc + str + serialize(val);
+    }, '');
+
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(cssString);
+
+    return sheet;
+}
+```
+
+## Page Styles
+
+```css
+h1 {
+    view-transition-name: pageTitle;
+}
+```
