@@ -7,7 +7,7 @@ These are my notes for code I implement.
 
 ## HTML
 
-- [HTML](./notes/html/index.md)
+- [HTML](./notes/html/01-index.md)
 - [Form Debug](./notes/html/form-debug.md)
 - [Dynamic Item](./notes/html/dynamic-item.md)
 - [Page Dialog](./notes/html/page-dialog.md)
