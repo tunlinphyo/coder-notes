@@ -1,0 +1,222 @@
+# ReactiveDirective
+
+ReactiveDirective used [Context](/script/context)
+
+Example: [ReactiveDirective](/examples/reactive-directive).
+
+## Contents
+
+- [Example HTML](#example-html)
+- [Example ReactiveTest](#example-reactivetest)
+- [ReactiveDirective](#reactivedirective)
+
+## Example HTML
+
+```html
+<reactive-test scoped>
+    <button data-button="toggle" data-toggle="on" data-target="outie">TOGGLE OUTIE</button>
+    <div data-toggle-target="outie" data-style="background:hotpink|cornflowerblue">
+        <p>data-style="background:hotpink|lightblue"</p>
+        Hello Wolrd!
+    </div>
+    <div data-toggle-target="outie">
+        <p>
+            If <span>data-style</span> is not set, all <span>data-toggle-target</span> elements will have their
+            <span>data-attr</span> set to <span>on</span> or <span>off</span>.
+        </p>
+        <div class="actions">
+            <button data-button="context" data-context="outie.page:one|two|three">LOOP PAGE</button>
+            <button data-button="context" data-context="outie.page:one">ONE</button>
+            <button data-button="context" data-context="outie.page:two">TWO</button>
+            <button data-button="context" data-context="outie.page:three">THREE</button>
+        </div>
+        <div class="actions">
+            <button data-button="context" data-context="outie.test:one|two|three">LOOP OUTIE</button>
+            <button data-button="context" data-context="outie.test:one">ONE</button>
+            <button data-button="context" data-context="outie.test:two">TWO</button>
+            <button data-button="context" data-context="outie.test:three">THREE</button>
+        </div>
+        <div class="display">
+            <div>
+                Page: <span data-bind-text="outie.page"></span>
+            </div>
+            <div>
+                Outie: <span data-bind-text="outie.test"></span>
+            </div>
+        </div>
+        <json-debug></json-debug>
+    </div>
+    <br>
+    <reactive-test scoped>
+        <button data-button="toggle" data-toggle="off" data-target="innie">TOGGLE INNIE</button>
+        <div data-toggle-target="innie" data-style="display:block|none">
+            <p>data-style="display:block|none"</p>
+            Hello Wolrd!
+        </div>
+        <div data-toggle-target="innie">
+            <p>
+                If <span>data-style</span> is not set, all <span>data-toggle-target</span> elements will have their
+                <span>data-attr</span> set to <span>on</span> or <span>off</span>.
+            </p>
+            <div class="actions">
+                <button data-button="context" data-context="innie.page:one|two|three">LOOP PAGE</button>
+                <button data-button="context" data-context="innie.page:one">ONE</button>
+                <button data-button="context" data-context="innie.page:two">TWO</button>
+                <button data-button="context" data-context="innie.page:three">THREE</button>
+            </div>
+            <div class="actions">
+                <button data-button="context" data-context="innie.test:one|two|three">LOOP INNIE</button>
+                <button data-button="context" data-context="innie.test:one">ONE</button>
+                <button data-button="context" data-context="innie.test:two">TWO</button>
+                <button data-button="context" data-context="innie.test:three">THREE</button>
+            </div>
+            <div class="display">
+                <div>
+                    Page: <span data-bind-text="innie.page"></span>
+                </div>
+                <div>
+                    Innie: <span data-bind-text="innie.test"></span>
+                </div>
+            </div>
+            <json-debug></json-debug>
+        </div>
+    </reactive-test>
+</reactive-test>
+```
+
+## Example ReactiveTest
+
+Reference: [MiniEl](/html/miniel)
+
+```ts
+export class ReactiveTest extends MiniEl {
+    private reactive?: ReactiveDirective
+
+    constructor() {
+        super()
+        this.reactive = new ReactiveDirective(this, (value) => {
+            console.log(value)
+        })
+    }
+
+    protected onDisconnect() {
+        this.reactive.distory()
+    }
+
+    protected render() {
+        return html`
+            <slot></slot>
+        `
+    }
+}
+
+customElements.define('reactive-test', ReactiveTest)
+```
+
+## ReactiveDirective
+
+File: `reactive.ts`
+
+```ts
+type DataType = Record<string, unknown>
+
+export const reactiveContext = createContext<DataType>('reactive-context')
+
+export class ReactiveDirective {
+    private data: DataType = {}
+    private provider!: ContextProvider<DataType>
+    private scoped: boolean = true
+
+    constructor(private host: HTMLElement, callback?: (data: DataType) => void) {
+        this.scoped = host.hasAttribute('scoped')
+        this.data = extractDataFromBindings(host)
+
+        this.provider = new ContextProvider(host, reactiveContext, {
+            initial: this.data
+        })
+
+        this.provider.subscribe(host, value => {
+            if (callback) callback(value)
+        })
+
+        this.onClick = this.onClick.bind(this)
+        this.setInitData()
+
+        this.listeners()
+    }
+
+    listeners() {
+        this.host.addEventListener('click', this.onClick)
+    }
+
+    private setInitData() {
+        const btns = document.querySelectorAll<HTMLButtonElement>('button[data-button="toggle"]')
+        for (const btn of btns) {
+            if (btn.hasAttribute('data-toggle')) {
+                this.toggle(btn.dataset, btn.dataset.toggle === 'on')
+            }
+        }
+    }
+
+    private onClick(e: Event) {
+        if (this.scoped) e.stopPropagation()
+        const target = e.target as HTMLElement
+        if (target.hasAttribute('data-button')) {
+            if (target.dataset.button === 'toggle') {
+                target.dataset.toggle = target.dataset.toggle === 'on' ? 'off' : 'on'
+                this.toggle(target.dataset, target.dataset.toggle === 'on')
+            }
+            if (target.dataset.button === 'context') {
+                this.setContaxt(target)
+            }
+        }
+    }
+
+    private setContaxt(target: HTMLElement) {
+        if (target.dataset.context) {
+            const context = target.dataset.context
+            const [property, values] = context.split(':')
+            const list = values.split('|')
+            const value = getValueByPath(this.provider.value, property)
+            let index = list.indexOf(value)
+            index += 1
+            if (index >= list.length) index = 0
+
+            const data: Record<string, any> = {}
+            setValueByPath(data, property, list[index] || '')
+
+            const oldData = { ...this.provider.value }
+            const newData = deepMerge(this.provider.value, data)
+            updateBindings(this.host, newData, oldData)
+            this.provider.setValue(newData)
+        }
+    }
+
+    private toggle(dataset: DOMStringMap, isOn: boolean) {
+        if (!dataset.target) return
+        const elems = this.host.querySelectorAll<HTMLElement>(`[data-toggle-target=${dataset.target}]`)
+
+        for(const elem of elems) {
+            if (elem.dataset.style) {
+                const style = elem.dataset.style
+                const [property, values] = style.split(':')
+                const [on, off] = values?.split('|') || []
+
+                if (!property || on === undefined || off === undefined) continue
+
+                if (property in elem.style) {
+                    elem.style[property as any] = isOn ? on : off
+                }
+            }
+            if (elem.dataset.attr) {
+                elem.dataset.attr = dataset.toggle
+            }
+        }
+    }
+
+    destroy() {
+        this.host.removeEventListener('click', this.onClick)
+        this.provider.unsubscribe(this.host)
+    }
+}
+```

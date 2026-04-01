@@ -18,7 +18,17 @@ These are my notes for code I implement.
 
 ## CSS
 
-- [CSS](./notes/css/index.md)
+- [CSS](./notes/css/01-index.md)
 - [Cool CSS](./notes/css/cool-css.md)
 - [ARIA](./notes/css/aria.md)
 - [View Transition](./notes/css/view-transition.md)
+
+## Script
+
+- [Script](./notes/script/01-index.md)
+- [Form Utils](./notes/script/form-utils.md)
+- [Signal](./notes/script/signal.md)
+- [Reactive Directive](./notes/script/reactive-directive.md)
+- [Sticky Hack](./notes/script/sticky-hack.md)
+- [CSS Style Sheet](./notes/script/css-style-sheet.md)
+- [Context](./notes/script/context.md)
